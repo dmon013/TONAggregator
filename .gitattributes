@@ -1,0 +1,13 @@
+# Все текстовые файлы по-умолчанию храним в репозитории с LF
+* text=auto
+
+# Принудительно задаём, что JSON, config и скрипты тоже в репозитории будут LF
+*.json text eol=lf
+*.js   text eol=lf
+*.html text eol=lf
+*.css  text eol=lf
+*.md   text eol=lf
+
+# Если есть бинарные (изображения, иконки и т.д.), снимаем с них text-флаг
+*.png  binary
+*.jpg  binary
