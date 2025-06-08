@@ -3,6 +3,9 @@ from firebase_admin import credentials, firestore, auth as firebase_auth
 from flask import Flask, request, jsonify
 from flask_cors import CORS # Для разрешения запросов с вашего фронтенда
 
+from flask import Response
+import json
+
 # --- Инициализация Firebase Admin SDK ---
 # Замените 'путь/к/вашему/serviceAccountKey.json' на реальный путь к вашему файлу ключа
 try:
@@ -16,7 +19,7 @@ except Exception as e:
 
 # --- Инициализация Flask приложения ---
 app = Flask(__name__)
-CORS(app) # Разрешает CORS для всех маршрутов. Для продакшена лучше настроить более строго.
+CORS(app, origins=["http://localhost:5000", "http://127.0.0.1:5000"]) # Разрешает CORS для всех маршрутов. Для продакшена лучше настроить более строго.
 
 # --- Коллекции в Firestore (согласно предыдущему обсуждению) ---
 USERS_COLLECTION = "users"
@@ -63,7 +66,10 @@ def get_approved_applications():
             if 'updatedAt' in app_data and hasattr(app_data['updatedAt'], 'isoformat'):
                 app_data['updatedAt'] = app_data['updatedAt'].isoformat()
             applications.append(app_data)
-        return jsonify(applications), 200
+            return Response(
+                json.dumps(applications, ensure_ascii=False),
+                mimetype='application/json'
+            ), 200
     except Exception as e:
         print(f"Ошибка при получении одобренных приложений: {e}")
         return jsonify({"error": "Не удалось получить приложения", "details": str(e)}), 500
@@ -289,6 +295,43 @@ def admin_delete_application(app_id):
         print(f"Ошибка при удалении приложения {app_id}: {e}")
         return jsonify({"error": "Не удалось удалить приложение", "details": str(e)}), 500
 
+# --- Маршруты для избранного ---
+
+FAVORITES_COLLECTION = "favorites"
+
+@app.route('/favorites', methods=['POST'])
+def add_favorite():
+    if not db:
+        return jsonify({"error": "База данных не инициализирована"}), 500
+    data = request.json
+    user_id = data.get('userId')
+    app_id = data.get('appId')
+    if not user_id or not app_id:
+        return jsonify({"error": "userId и appId обязательны"}), 400
+    fav_id = f"{user_id}_{app_id}"
+    fav_ref = db.collection(FAVORITES_COLLECTION).document(fav_id)
+    fav_ref.set({
+        "userId": user_id,
+        "appId": app_id,
+        "createdAt": firestore.SERVER_TIMESTAMP
+    })
+    return jsonify({"id": fav_id}), 201
+
+@app.route('/favorites/<fav_id>', methods=['DELETE'])
+def delete_favorite(fav_id):
+    if not db:
+        return jsonify({"error": "База данных не инициализирована"}), 500
+    fav_ref = db.collection(FAVORITES_COLLECTION).document(fav_id)
+    fav_ref.delete()
+    return jsonify({"result": "deleted"}), 200
+
+@app.route('/favorites/<user_id>', methods=['GET'])
+def get_user_favorites(user_id):
+    if not db:
+        return jsonify({"error": "База данных не инициализирована"}), 500
+    docs = db.collection(FAVORITES_COLLECTION).where('userId', '==', user_id).stream()
+    favorites = [doc.to_dict()['appId'] for doc in docs]
+    return jsonify(favorites), 200
 
 if __name__ == '__main__':
     # Для разработки можно использовать порт 5000 или любой другой

@@ -554,7 +554,7 @@
           category: item.category,
           description: item.description,
           rating: item.averageRating || item.rating || 0,
-          icon: item.iconURL || '' 
+          icon: item.iconUrl || '' 
           // если в бэке поле называется иначе, корректируйте
         }));
       } catch (err) {
@@ -571,7 +571,7 @@
     let currentSearchPageFilter = ''; // Отдельный фильтр для страницы searchOnly
     let currentLang = localStorage.getItem('lang') || 'ru';
     
-    const APPS_COLLECTION_PATH = `/artifacts/${appId}/public/data/applications`;
+    const APPS_COLLECTION_PATH = `applications`
     const SUBMITTED_APPS_COLLECTION_PATH = `/artifacts/${appId}/public/data/appSubmissions`;
 
     async function loadAppsFromFirestore() {
@@ -975,7 +975,7 @@
     }
 
       async function toggleFavorite(i) {
-    const favId = `${currentUserId}_${i}`;  // currentUserId — где‐то хранится ваш ID (user_1)
+    const favId = `${userId}_${i}`;  // currentUserId — где‐то хранится ваш ID (user_1)
     if (favorites.has(i)) {
       // Уже в избранном — отправляем DELETE запрос
       try {
@@ -995,7 +995,7 @@
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            userId: currentUserId,
+            userId: userId,
             appId: i
           })
         });
@@ -1055,10 +1055,11 @@
         default:
           break;
       }
+
+      renderList('searchResults', filteredApps);
     }
   }
 
-   renderList('searchResults', filteredApps);
    
 function navigateToSearchWithListType(listType) {
         let listToShow = [];
@@ -1178,8 +1179,8 @@ function navigateToSearchWithListType(listType) {
             userSubmitMessage.classList.add('error');
             return;
         }
-        const requestData = { title, category, description, url, iconUrl, contact };
-        const result = await submitAppRequestToFirestore(requestData);
+        const requestData = { title, category, description, appUrl, iconUrl, contact, submittedByUserId: userId }; // добавь userId, его можно взять из аутентификации
+        const result = await submitAppRequestToBackend(requestData);
 
         if (result && !result.error && result.id) {
             userSubmitMessage.textContent = translations[currentLang].requestSentSuccess;
