@@ -537,10 +537,11 @@
      * Загружает все приложения из Flask API (/apps) и сохраняет их в глобальную переменную apps.
      * Возвращает Promise, который резолвится после того, как apps заполнится.
      */
+    const API_BASE = 'http://127.0.0.1:5001'; // Замените на адрес вашего Flask API
+
     async function loadAppsFromBackend() {
       try {
-        // Адрес бекенда с Flask: если бэкенд локальный, то http://127.0.0.1:5000
-        const response = await fetch('http://127.0.0.1:5000/apps');
+        const response = await fetch(`${API_BASE}/applications`);
         if (!response.ok) {
           throw new Error(`Ошибка ${response.status}: ${response.statusText}`);
         }
@@ -570,7 +571,7 @@
     let currentSearchPageFilter = ''; // Отдельный фильтр для страницы searchOnly
     let currentLang = localStorage.getItem('lang') || 'ru';
     
-    const APPS_COLLECTION_PATH = `/artifacts/${appId}/public/data/apps`;
+    const APPS_COLLECTION_PATH = `/artifacts/${appId}/public/data/applications`;
     const SUBMITTED_APPS_COLLECTION_PATH = `/artifacts/${appId}/public/data/appSubmissions`;
 
     async function loadAppsFromFirestore() {
@@ -653,25 +654,19 @@
       }
     }
 
-    async function submitAppRequestToFirestore(requestData) {
-        if (!db) {
-            console.error("Firestore DB is not initialized for submitting app request.");
-            return { error: translations[currentLang].generalError };
-        }
-        try {
-            const dataToSave = { 
-                ...requestData, 
-                submittedAt: serverTimestamp(), 
-                status: "pending",
-                submitterUserId: userId || "anonymous" // Сохраняем ID пользователя
-            };
-            const docRef = await addDoc(collection(db, SUBMITTED_APPS_COLLECTION_PATH), dataToSave);
-            console.log("User app request submitted with ID: ", docRef.id);
-            return { id: docRef.id, ...dataToSave };
-        } catch (error) {
-            console.error("Error submitting app request to Firestore: ", error);
-            return { error: error.message };
-        }
+    async function submitAppRequestToBackend(requestData) {
+      try {
+        const response = await fetch('http://127.0.0.1:5001/submit-application', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestData)
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || 'Ошибка');
+        return result;
+      } catch (error) {
+        return { error: error.message };
+      }
     }
     
     function translateUI() {
@@ -984,7 +979,7 @@
     if (favorites.has(i)) {
       // Уже в избранном — отправляем DELETE запрос
       try {
-        const response = await fetch(`http://127.0.0.1:5000/favorites/${favId}`, {
+        const response = await fetch(`${API_BASE}/favorites/${favId}`, {
           method: 'DELETE'
         });
         if (!response.ok) throw new Error('Ошибка удаления из избранного');
@@ -996,7 +991,7 @@
     } else {
       // Ещё нет — отправляем POST
       try {
-        const response = await fetch('http://127.0.0.1:5000/favorites', {
+        const response = await fetch(`${API_BASE}/favorites`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1031,43 +1026,41 @@
       }
       renderSearchHistory();
 
-      // query-параметры для бэкенда
-      const params = new URLSearchParams();
-      if (currentFilter) params.append('category', currentFilter);
-      if (term) params.append('q', term);       // бекенд ожидает /search?q=…
-      const sortValue = document.getElementById('sortSelect').value;
-      if (sortValue) params.append('sort', sortValue);
-
-      let url = `http://127.0.0.1:5000/apps`;
-      // Если есть term (поиск), используем эндпоинт /search, иначе /apps
-      if (term) {
-        url = `http://127.0.0.1:5000/search?${params.toString()}`;
-      } else {
-        url = `http://127.0.0.1:5000/apps?${params.toString()}`;
+      let filteredApps = [...apps];
+      if (currentFilter) {
+        filteredApps = filteredApps.filter(a => a.category === currentFilter);
       }
+      const sortValue = document.getElementById('sortSelect').value;
 
-      try {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error(`Ошибка сервера ${response.status}`);
-        const data = await response.json();
-        // Преобразуем полученный массив в формат для renderList
-        const filteredApps = data.map(item => ({
-          id: item.id,
-          title: item.title,
-          category: item.category,
-          description: item.description,
-          rating: item.averageRating || item.rating || 0,
-          icon: item.iconURL || ''
-        }));
-        renderList('searchResults', filteredApps);
-      } catch (err) {
-        console.error('Ошибка при поиске/фильтрации:', err);
-        renderList('searchResults', []);  // покажем пустой список
+        if (term) {
+          const q = term.toLowerCase();
+          filteredApps = filteredApps.filter(a =>
+            a.title.toLowerCase().includes(q) ||
+            (a.description && a.description.toLowerCase().includes(q))
+          );
+
+           switch (sortValue) {
+        case 'rating_desc':
+          filteredApps.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+          break;
+        case 'title_asc':
+          filteredApps.sort((a, b) => a.title.localeCompare(b.title));
+          break;
+        case 'title_desc':
+          filteredApps.sort((a, b) => b.title.localeCompare(a.title));
+          break;
+        case 'category':
+          filteredApps.sort((a, b) => a.category.localeCompare(b.category));
+          break;
+        default:
+          break;
       }
     }
+  }
 
-    
-    function navigateToSearchWithListType(listType) {
+   renderList('searchResults', filteredApps);
+   
+function navigateToSearchWithListType(listType) {
         let listToShow = [];
         switch(listType) {
             case 'collections': listToShow = apps.slice(0,3); break; // Пример
