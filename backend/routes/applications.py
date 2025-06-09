@@ -1,32 +1,26 @@
-import firebase_admin
-from firebase_admin import credentials, firestore, auth as firebase_auth
-from flask import Flask, request, jsonify
-from flask_cors import CORS # Для разрешения запросов с вашего фронтенда
-
-from flask import Response
+from flask import Blueprint, request, jsonify, Response
+from backend.extensions import db, cors
+from backend.config import APPLICATIONS_COLLECTION
 import json
+from firebase_admin import credentials, firestore
+import firebase_admin
 
-# --- Инициализация Firebase Admin SDK ---
-# Замените 'путь/к/вашему/serviceAccountKey.json' на реальный путь к вашему файлу ключа
+applications_bp = Blueprint('applications_bp', __name__)
+
 try:
-    cred = credentials.Certificate('serviceAccountKey.json') # УКАЖИТЕ ПРАВИЛЬНЫЙ ПУТЬ
-    firebase_admin.initialize_app(cred)
+    cred = credentials.Certificate('D:/TONAggregator/backend/serviceAccountKey.json')
+    if not firebase_admin._apps:
+        firebase_admin.initialize_app(cred)
     db = firestore.client()
     print("Firebase Admin SDK инициализирован успешно.")
 except Exception as e:
     print(f"Ошибка инициализации Firebase Admin SDK: {e}")
     db = None # Устанавливаем db в None, чтобы избежать ошибок дальше, если инициализация не удалась
 
-# --- Инициализация Flask приложения ---
-app = Flask(__name__)
-CORS(app, origins=["http://localhost:5000", "http://127.0.0.1:5000"]) # Разрешает CORS для всех маршрутов. Для продакшена лучше настроить более строго.
-
-# --- Коллекции в Firestore (согласно предыдущему обсуждению) ---
-USERS_COLLECTION = "users"
-APPLICATIONS_COLLECTION = "applications"
-
 # --- Вспомогательная функция для проверки роли администратора ---
 # В реальном приложении это может быть сложнее, например, с использованием Firebase Auth Custom Claims
+USERS_COLLECTION = 'users'  # Замените 'users' на фактическое имя вашей коллекции пользователей
+
 def is_admin(user_uid):
     if not db:
         return False
@@ -40,17 +34,32 @@ def is_admin(user_uid):
         print(f"Ошибка при проверке роли администратора: {e}")
     return False
 
-# --- Middleware для проверки токена Firebase Auth (опционально, но рекомендуется) ---
-# Этот middleware будет проверять токен аутентификации Firebase, переданный в заголовке Authorization
-# и добавлять информацию о пользователе в request.user
-# Для простоты примера, я не буду его реализовывать полностью, но покажу, где он мог бы быть.
-# Вместо этого, для админских маршрутов мы будем передавать user_uid и проверять его роль.
-
-# --- API Маршруты ---
+@applications_bp.route('/', methods=['GET'])
+def get_approved_applications():
+    try:
+        apps_ref = db.collection(APPLICATIONS_COLLECTION).where('status', '==', 'approved')
+        docs = apps_ref.stream()
+        applications = []
+        for doc in docs:
+            app_data = doc.to_dict()
+            app_data['id'] = doc.id
+            # Firestore Timestamp -> ISO string
+            if 'createdAt' in app_data and hasattr(app_data['createdAt'], 'isoformat'):
+                app_data['createdAt'] = app_data['createdAt'].isoformat()
+            if 'updatedAt' in app_data and hasattr(app_data['updatedAt'], 'isoformat'):
+                app_data['updatedAt'] = app_data['updatedAt'].isoformat()
+            applications.append(app_data)
+        return Response(
+            json.dumps(applications, ensure_ascii=False),
+            mimetype='application/json'
+        ), 200
+    except Exception as e:
+        print(f"Ошибка при получении приложений: {e}")
+        return jsonify({"error": "Не удалось получить приложения", "details": str(e)}), 50
 
 # Получить список всех ОДОБРЕННЫХ приложений
-@app.route('/applications', methods=['GET'])
-def get_approved_applications():
+@applications_bp.route('/applications', methods=['GET'])
+def get_bar_applications():
     if not db:
         return jsonify({"error": "База данных не инициализирована"}), 500
     try:
@@ -75,7 +84,7 @@ def get_approved_applications():
         return jsonify({"error": "Не удалось получить приложения", "details": str(e)}), 500
 
 # Получить детали конкретного ОДОБРЕННОГО приложения по ID
-@app.route('/applications/<app_id>', methods=['GET'])
+@applications_bp.route('/applications/<app_id>', methods=['GET'])
 def get_application_detail(app_id):
     if not db:
         return jsonify({"error": "База данных не инициализирована"}), 500
@@ -100,7 +109,7 @@ def get_application_detail(app_id):
         return jsonify({"error": "Не удалось получить детали приложения", "details": str(e)}), 500
 
 # Пользовательская подача заявки на новое приложение
-@app.route('/submit-application', methods=['POST'])
+@applications_bp.route('/submit-application', methods=['POST'])
 def submit_application():
     if not db:
         return jsonify({"error": "База данных не инициализирована"}), 500
@@ -142,7 +151,7 @@ def submit_application():
 # В реальном приложении используйте Firebase Auth ID Token и middleware для проверки.
 
 # (Админ) Получить список ВСЕХ приложений (включая pending)
-@app.route('/admin/applications', methods=['GET'])
+@applications_bp.route('/admin/applications', methods=['GET'])
 def admin_get_all_applications():
     if not db:
         return jsonify({"error": "База данных не инициализирована"}), 500
@@ -169,7 +178,7 @@ def admin_get_all_applications():
         return jsonify({"error": "Не удалось получить приложения", "details": str(e)}), 500
 
 # (Админ) Добавить новое приложение напрямую (статус 'approved')
-@app.route('/admin/applications', methods=['POST'])
+@applications_bp.route('/admin/applications', methods=['POST'])
 def admin_add_application():
     if not db:
         return jsonify({"error": "База данных не инициализирована"}), 500
@@ -204,7 +213,7 @@ def admin_add_application():
         return jsonify({"error": "Не удалось добавить приложение", "details": str(e)}), 500
 
 # (Админ) Изменить статус приложения (одобрить/отклонить)
-@app.route('/admin/applications/<app_id>/status', methods=['PUT'])
+@applications_bp.route('/admin/applications/<app_id>/status', methods=['PUT'])
 def admin_update_application_status(app_id):
     if not db:
         return jsonify({"error": "База данных не инициализирована"}), 500
@@ -238,7 +247,7 @@ def admin_update_application_status(app_id):
         return jsonify({"error": "Не удалось изменить статус приложения", "details": str(e)}), 500
 
 # (Админ) Обновить детали приложения (опционально)
-@app.route('/admin/applications/<app_id>', methods=['PUT'])
+@applications_bp.route('/admin/applications/<app_id>', methods=['PUT'])
 def admin_update_application_details(app_id):
     if not db:
         return jsonify({"error": "База данных не инициализирована"}), 500
@@ -275,7 +284,7 @@ def admin_update_application_details(app_id):
 
 
 # (Админ) Удалить приложение (опционально)
-@app.route('/admin/applications/<app_id>', methods=['DELETE'])
+@applications_bp.route('/admin/applications/<app_id>', methods=['DELETE'])
 def admin_delete_application(app_id):
     if not db:
         return jsonify({"error": "База данных не инициализирована"}), 500
@@ -299,7 +308,7 @@ def admin_delete_application(app_id):
 
 FAVORITES_COLLECTION = "favorites"
 
-@app.route('/favorites', methods=['POST'])
+@applications_bp.route('/favorites', methods=['POST'])
 def add_favorite():
     if not db:
         return jsonify({"error": "База данных не инициализирована"}), 500
@@ -317,7 +326,7 @@ def add_favorite():
     })
     return jsonify({"id": fav_id}), 201
 
-@app.route('/favorites/<fav_id>', methods=['DELETE'])
+@applications_bp.route('/favorites/<fav_id>', methods=['DELETE'])
 def delete_favorite(fav_id):
     if not db:
         return jsonify({"error": "База данных не инициализирована"}), 500
@@ -325,7 +334,7 @@ def delete_favorite(fav_id):
     fav_ref.delete()
     return jsonify({"result": "deleted"}), 200
 
-@app.route('/favorites/<user_id>', methods=['GET'])
+@applications_bp.route('/favorites/<user_id>', methods=['GET'])
 def get_user_favorites(user_id):
     if not db:
         return jsonify({"error": "База данных не инициализирована"}), 500
@@ -333,8 +342,11 @@ def get_user_favorites(user_id):
     favorites = [doc.to_dict()['appId'] for doc in docs]
     return jsonify(favorites), 200
 
+from flask import Flask
+
 if __name__ == '__main__':
     # Для разработки можно использовать порт 5000 или любой другой
     # В продакшене используйте WSGI сервер, например, Gunicorn
+    app = Flask(__name__)
+    app.register_blueprint(applications_bp, url_prefix='/')
     app.run(debug=True, host='0.0.0.0', port=5001)
-
