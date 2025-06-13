@@ -1,259 +1,330 @@
-    /* Цветовые переменные */
-    :root {
-      --bg: #f0f4f8; /* Более светлый фон */
-      --text: #333; /* Чуть мягче черный */
-      --card-bg: #ffffff;
-      --header-bg: #007bff; /* Яркий синий для акцента */
-      --header-text: #ffffff;
-      --nav-bg: #ffffff;
-      --nav-link: #007bff;
-      --nav-link-active-bg: #e9ecef;
-      --input-bg: #ffffff;
-      --input-text: #333;
-      --border-color: #dee2e6; /* Стандартный Bootstrap цвет границы */
-      --spinner-border: #007bff;
-      --success-color: #28a745;
-      --error-color: #dc3545;
-      --star-color: #ffc107; /* Цвет для звезд рейтинга */
-      --button-primary-bg: #007bff;
-      --button-primary-text: #ffffff;
-      --button-secondary-bg: #6c757d;
-      --button-secondary-text: #ffffff;
-    }
-    body.dark {
-      --bg: #121212; /* Глубокий темный */
-      --text: #e0e0e0;
-      --card-bg: #1e1e1e; /* Темные карточки */
-      --header-bg: #1f1f1f; /* Темный хедер */
-      --header-text: #e0e0e0;
-      --nav-bg: #1a1a1a;
-      --nav-link: #bb86fc; /* Фиолетовый акцент для темной темы */
-      --nav-link-active-bg: #332244;
-      --input-bg: #2c2c2c;
-      --input-text: #e0e0e0;
-      --border-color: #444444;
-      --spinner-border: #bb86fc;
-      --star-color: #fdd835;
-      --button-primary-bg: #bb86fc;
-      --button-primary-text: #121212;
-      --button-secondary-bg: #373737;
-      --button-secondary-text: #e0e0e0;
-    }
-    body { 
-      background: var(--bg); 
-      color: var(--text); 
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; /* Более системный шрифт */
-      margin: 0; 
-      padding-top: 70px; /* Отступ для фиксированного хедера */
-      padding-bottom: 80px; /* Отступ для фиксированной навигации */
-      transition: background 0.3s, color 0.3s; 
-      line-height: 1.6;
-    }
-    /* Анимация появления */
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-    
-    header { 
-      padding: 0.8rem 1rem; 
-      text-align: center; 
-      background: var(--header-bg); 
-      color: var(--header-text); 
-      position: fixed; /* Фиксированный хедер */
-      top: 0;
-      left: 0;
-      right: 0;
-      z-index: 1030; /* Выше чем bottom-nav */
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    header h1 { font-size: 1.5rem; margin: 0; }
-    #themeToggle, #langToggle { 
-      position: absolute; 
-      top: 50%;
-      transform: translateY(-50%);
-      background: transparent; 
-      border: none; 
-      font-size: 1.5rem; /* Крупнее иконки */
-      cursor: pointer; 
-      color: var(--header-text); 
-      padding: 0.5rem;
-    }
-    #themeToggle { right: 3.5rem; }
-    #langToggle { right: 0.5rem; }
+:root {
+    --tg-bg-color: var(--telegram-bg-color, #ffffff);
+    --tg-text-color: var(--telegram-text-color, #000000);
+    --tg-hint-color: var(--telegram-hint-color, #999999);
+    --tg-link-color: var(--telegram-link-color, #2481cc);
+    --tg-button-color: var(--telegram-button-color, #2481cc);
+    --tg-button-text-color: var(--telegram-button-text-color, #ffffff);
+    --tg-secondary-bg-color: var(--telegram-secondary-bg-color, #f1f1f1);
+}
 
-    input, select, textarea { 
-      background: var(--input-bg); 
-      color: var(--input-text); 
-      border: 1px solid var(--border-color); 
-      border-radius: 0.375rem; /* Bootstrap's default */
-      padding: 0.5rem 0.75rem; 
-      margin-bottom: 0.75rem; 
-      width: 100%; 
-      box-sizing: border-box; 
-      font-size: 0.95rem;
-      transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-    }
-    input:focus, select:focus, textarea:focus {
-        border-color: var(--nav-link);
-        outline: 0;
-        box-shadow: 0 0 0 0.2rem rgba(var(--nav-link-rgb, 0,123,255), 0.25); /* Динамический цвет тени */
-    }
-    textarea { resize: vertical; min-height: 80px; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    padding: 0 0 70px 0; /* Отступ снизу для нав. панели */
+    background-color: var(--tg-bg-color);
+    color: var(--tg-text-color);
+    overscroll-behavior-y: none;
+    -webkit-font-smoothing: antialiased;
+}
 
-    .bottom-nav { 
-      background: var(--nav-bg); 
-      position: fixed; 
-      bottom: 0; left: 0; right: 0; 
-      display: flex; 
-      justify-content: space-around; 
-      padding: 0.5rem 0; 
-      box-shadow: 0 -2px 5px rgba(0,0,0,0.08); 
-      z-index: 1020; 
-    }
-    .bottom-nav a { 
-      color: var(--nav-link); 
-      text-decoration: none; 
-      font-size: 1.6rem; /* Иконки еще чуть крупнее */
-      padding: 0.5rem 0.75rem;
-      border-radius: 0.375rem;
-      transition: background-color 0.2s, color 0.2s;
-    }
-    .bottom-nav a.active {
-      background-color: var(--nav-link-active-bg);
-      color: var(--nav-link); /* Может потребоваться другой цвет для активной ссылки в темной теме */
-    }
-     body.dark .bottom-nav a.active {
-        color: var(--button-primary-bg); /* Яркий цвет для активной иконки в темной теме */
-    }
+#app-root {
+    max-width: 100%;
+    margin: 0 auto;
+    box-sizing: border-box;
+}
 
+/* --- Структура экранов (Views) --- */
+.view {
+    display: none;
+    flex-direction: column;
+    height: 100vh;
+    box-sizing: border-box;
+}
+.view.active {
+    display: flex;
+}
+.view-header {
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    background-color: var(--tg-secondary-bg-color);
+    border-bottom: 1px solid var(--tg-hint-color);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+.view-header h2 {
+    margin: 0;
+    font-size: 1.2em;
+    flex-grow: 1;
+    text-align: center;
+}
+.back-button {
+    background: none;
+    border: none;
+    font-size: 1.5em;
+    cursor: pointer;
+    color: var(--tg-link-color);
+    padding: 0 15px;
+}
+.view-content {
+    padding: 15px;
+    overflow-y: auto;
+    flex-grow: 1;
+}
 
-    section { display: none; padding: 1.5rem; animation: fadeIn 0.4s ease-out; }
-    section.active { display: block; }
-    section h5 { font-size: 1.25rem; margin-bottom: 1rem; font-weight: 600; }
+/* --- Главный экран --- */
+#main-view header {
+    padding: 10px 15px;
+    border-bottom: 1px solid var(--tg-hint-color);
+}
+#main-view header h1 {
+    margin: 0 0 10px 0;
+    font-size: 1.8em;
+    text-align: left;
+}
+.search-container {
+    display: flex;
+}
+.search-container input {
+    flex-grow: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    background-color: var(--tg-secondary-bg-color);
+    color: var(--tg-text-color);
+    font-size: 1em;
+}
+.search-container button {
+    background: none;
+    border: none;
+    font-size: 1.5em;
+    padding: 0 10px;
+    cursor: pointer;
+    color: var(--tg-hint-color);
+}
 
-    .card-app { 
-      background: var(--card-bg); 
-      border: 1px solid var(--border-color);
-      border-radius: 0.5rem; /* Мягче углы */
-      box-shadow: 0 4px 8px rgba(0,0,0,0.05); 
-      margin-bottom: 1.25rem; 
-      overflow: hidden; 
-      cursor: default; /* Убираем курсор по умолчанию с всей карты */
-      opacity: 0; animation: fadeIn 0.5s forwards; 
-      transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-    }
-    .card-app:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 6px 12px rgba(0,0,0,0.08);
-    }
-    .card-body { padding: 1rem; display: flex; align-items: center; justify-content: space-between; }
-    .card-body img { width: 48px; height: 48px; border-radius: 0.375rem; object-fit: cover; margin-right: 1rem; }
-    .info { flex: 1; cursor: pointer; } /* Курсор на информационный блок для клика */
-    .info h5 { margin-bottom: 0.3rem; font-size: 1.05rem; font-weight: 600; color: var(--text); }
-    .info p { font-size: 0.85rem; margin-bottom: 0.3rem; color: var(--text); opacity: 0.75; }
-    .info small { font-size: 0.95rem; color: var(--star-color); }
-    .rating-canvas { margin-left: 0.75rem; }
-    .favorite-star { 
-        cursor: pointer; 
-        font-size: 1.8rem; /* Крупнее звезда */
-        color: var(--border-color); 
-        margin-left: 0.75rem; 
-        padding: 0.25rem; 
-        transition: color 0.2s, transform 0.2s;
-    }
-    .favorite-star:hover { transform: scale(1.1); }
-    .favorite-star.filled { color: var(--star-color); }
+/* --- Секции на главной --- */
+.content-section {
+    margin-bottom: 25px;
+}
+.content-section h2 {
+    font-size: 1.3em;
+    margin: 0 0 10px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.see-all-btn {
+    font-size: 0.7em;
+    color: var(--tg-link-color);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding-right: 15px;
+}
 
-    .category-filters button, .category-filters-main button { 
-      margin-right: 0.5rem; margin-bottom: 0.75rem; 
-      background-color: var(--input-bg); 
-      color: var(--nav-link); 
-      border: 1px solid var(--nav-link); 
-      padding: 0.4rem 0.9rem; 
-      border-radius: 1rem; /* Более округлые кнопки фильтров */
-      cursor: pointer; font-size: 0.9rem;
-      transition: background-color 0.2s, color 0.2s;
-    }
-    .category-filters button:hover, .category-filters-main button:hover {
-        background-color: var(--nav-link-active-bg);
-    }
-    .category-filters button.active, .category-filters-main button.active { 
-      background-color: var(--nav-link); 
-      color: var(--nav-bg); 
-      font-weight: 500;
-    }
-    .view-all-btn { 
-      background: none; border: none; 
-      color: var(--nav-link); 
-      cursor: pointer; font-size: 0.9rem; 
-      padding: 0.2rem 0.5rem; font-weight: 500;
-    }
-    .view-all-btn:hover { text-decoration: underline; }
+/* --- Горизонтальный скролл --- */
+.horizontal-scroll-list {
+    display: flex;
+    overflow-x: auto;
+    padding: 5px 15px;
+    gap: 12px;
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+.horizontal-scroll-list::-webkit-scrollbar {
+    display: none; /* Chrome, Safari, Opera */
+}
 
-    .spinner { border: 4px solid rgba(0,0,0,0.1); border-left-color: var(--spinner-border); border-radius: 50%; width: 36px; height: 36px; animation: spin 0.8s linear infinite; margin: 2.5rem auto; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    
-    #searchHistoryList button { 
-      background: var(--input-bg); color: var(--text); 
-      border: 1px solid var(--border-color); 
-      border-radius: 0.75rem; padding: 0.3rem 0.6rem; 
-      margin: 0.25rem; cursor: pointer; font-size: 0.85rem;
-    }
-    #searchHistoryList button:hover { background-color: var(--nav-link-active-bg); }
+/* --- Карточка приложения --- */
+.app-card-horizontal {
+    flex: 0 0 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+.app-card-horizontal.app-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+}
+.app-card-horizontal.app-name {
+    font-size: 0.8em;
+    margin-top: 5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+}
 
-    /* Стили для форм (Админка и Заявка пользователя) */
-    .form-section label { display: block; margin-bottom: 0.3rem; font-weight: 500; font-size: 0.9rem; }
-    .form-section button[type="submit"] { 
-      background-color: var(--button-primary-bg); 
-      color: var(--button-primary-text); 
-      border: none; padding: 0.6rem 1.2rem; 
-      font-size: 1rem; font-weight: 500;
-      cursor: pointer; margin-top: 1rem; border-radius: 0.375rem;
-      transition: opacity 0.2s;
-    }
-    .form-section button[type="submit"]:hover { opacity: 0.85; }
-    .form-message { 
-        margin-top: 1rem; padding: 0.75rem 1rem; 
-        border-radius: 0.375rem; text-align: center; font-size: 0.9rem;
-    }
-    .form-message.success { background-color: var(--success-color); color: white; }
-    .form-message.error { background-color: var(--error-color); color: white; }
+.app-card-vertical {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--tg-secondary-bg-color);
+}
+.app-card-vertical.app-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    flex-shrink: 0;
+}
+.app-card-vertical.app-info {
+    flex-grow: 1;
+    overflow: hidden;
+}
+.app-card-vertical.app-name {
+    font-size: 1.1em;
+    font-weight: 500;
+    margin: 0 0 4px 0;
+}
+.app-card-vertical.app-description {
+    font-size: 0.9em;
+    color: var(--tg-hint-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.app-card-vertical.open-btn {
+    padding: 6px 12px;
+    background-color: var(--tg-secondary-bg-color);
+    color: var(--tg-link-color);
+    border: none;
+    border-radius: 15px;
+    font-weight: 500;
+    cursor: pointer;
+}
 
-    #detailContent img { border-radius: 0.5rem; margin-bottom: 1rem; }
-    #detailContent h3 { font-size: 1.75rem; margin-bottom: 0.75rem; font-weight: 600; }
-    #detailContent p { margin-bottom: 0.75rem; line-height: 1.7; }
-    
-    .button-style {
-        background-color: var(--button-primary-bg);
-        color: var(--button-primary-text);
-        border: none;
-        padding: 0.6rem 1.2rem;
-        font-size: 1rem;
-        font-weight: 500;
-        cursor: pointer;
-        margin-top: 0.5rem;
-        border-radius: 0.375rem;
-        text-decoration: none;
-        display: inline-block;
-        text-align: center;
-        transition: opacity 0.2s;
-    }
-    .button-style:hover {
-        opacity: 0.85;
-    }
-    .button-style.secondary {
-        background-color: var(--button-secondary-bg);
-        color: var(--button-secondary-text);
-    }
-    .inactive-btn { background-color: #ccc; color: #666; cursor: not-allowed; opacity: 0.7; }
-    #backBtn {
-        margin-bottom: 1rem;
-        background: var(--input-bg);
-        color: var(--nav-link);
-        border: 1px solid var(--border-color);
-        padding: 0.4rem 0.8rem;
-        border-radius: 0.375rem;
-        cursor: pointer;
-        font-size: 0.9rem;
-    }
-    #backBtn:hover {
-        background-color: var(--nav-link-active-bg);
-    }
+.apps-grid-vertical {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+/* --- Экран деталей --- */
+#app-detail-content.detail-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+#app-detail-content.app-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 20px;
+}
+#app-detail-content.detail-title-group.app-name {
+    font-size: 1.5em;
+    font-weight: 600;
+    margin: 0;
+}
+#app-detail-content.detail-title-group.app-developer {
+    color: var(--tg-hint-color);
+}
+.detail-actions {
+    display: flex;
+    gap: 10px;
+    margin: 20px 0;
+}
+.detail-actions.action-btn {
+    flex-grow: 1;
+    padding: 12px;
+    font-size: 1em;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+.detail-actions.open-btn {
+    background-color: var(--tg-button-color);
+    color: var(--tg-button-text-color);
+}
+.detail-actions.secondary-btn {
+    background-color: var(--tg-secondary-bg-color);
+    color: var(--tg-link-color);
+}
+.screenshots-gallery {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 10px 0;
+}
+.screenshots-gallery img {
+    height: 200px;
+    border-radius: 8px;
+}
+.detail-description {
+    margin-top: 20px;
+    line-height: 1.6;
+}
+
+/* --- Нижняя навигация --- */
+#bottom-navigation {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-around;
+    background-color: var(--tg-secondary-bg-color);
+    border-top: 1px solid var(--tg-hint-color);
+    padding: 5px 0;
+    padding-bottom: calc(5px + env(safe-area-inset-bottom)); /* Для iPhone с "челкой" */
+}
+.nav-btn {
+    background: none;
+    border: none;
+    color: var(--tg-hint-color);
+    font-size: 1.5em;
+    cursor: pointer;
+    text-align: center;
+}
+.nav-btn span {
+    display: block;
+    font-size: 0.4em;
+    margin-top: 2px;
+}
+.nav-btn.active {
+    color: var(--tg-link-color);
+}
+
+/* --- Скелетные загрузчики --- */
+@keyframes skeleton-loading {
+    0% { background-color: var(--tg-secondary-bg-color); }
+    100% { background-color: color-mix(in srgb, var(--tg-secondary-bg-color) 80%, var(--tg-hint-color)); }
+}
+.skeleton {
+    animation: skeleton-loading 1s linear infinite alternate;
+}
+.skeleton-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 16px;
+}
+.skeleton-text {
+    width: 100%;
+    height: 1em;
+    border-radius: 4px;
+    margin-top: 8px;
+}
+
+/* --- Админ-панель --- */
+#admin-app-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+#admin-app-form input, #admin-app-form textarea, #admin-app-form select {
+    width: 100%;
+    padding: 10px;
+    font-size: 1em;
+    border: 1px solid var(--tg-hint-color);
+    border-radius: 6px;
+    background-color: var(--tg-secondary-bg-color);
+    color: var(--tg-text-color);
+    box-sizing: border-box;
+}
+#admin-app-form button {
+    padding: 12px;
+    font-size: 1em;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    background-color: var(--tg-button-color);
+    color: var(--tg-button-text-color);
+}

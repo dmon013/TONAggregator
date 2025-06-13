@@ -1,43 +1,50 @@
 // bot.js
-
-// Подключаем библиотеку
 const TelegramBot = require('node-telegram-bot-api');
+require('dotenv').config(); // Для загрузки BOT_TOKEN из файла.env
 
-// Вставьте сюда токен вашего бота из BotFather
-const TOKEN = '7684115873:AAGyGp2gODWZLp07fSWksdosDERCXNPS084';
+const token = process.env.TELEGRAM_BOT_TOKEN;
+const webAppUrl = process.env.TELEGRAM_WEB_APP_URL; // например, ваш URL Firebase хостинга
 
-// URL вашего Web App (например, Firebase Hosting): 
-// должно быть что-то вроде: https://my-project.web.app
-const WEBAPP_URL = 'https://tonaggregator.web.app';
+if (!token ||!webAppUrl) {
+    console.error("Ошибка: TELEGRAM_BOT_TOKEN или TELEGRAM_WEB_APP_URL не определены в.env или переменных окружения.");
+    process.exit(1);
+}
 
-// Запускаем бота в режиме polling
-const bot = new TelegramBot(TOKEN, { polling: true });
+const bot = new TelegramBot(token, { polling: true });
 
-// Обработчик команды /start
-bot.onText(/\/start/, async (msg) => {
-  const chatId = msg.chat.id;
-
-  // Создаём объект кнопки Web App
-  const webAppButton = {
-    text: '🚀 Открыть TONAggregator',
-    web_app: { url: WEBAPP_URL }
-  };
-
-  // Упаковываем кнопку в inline-клавиатуру
-  const inlineKeyboard = {
-    reply_markup: {
-      inline_keyboard: [
-        [ webAppButton ]  // одна строка, одна кнопка
-      ]
-    }
-  };
-
-  // Отправляем сообщение с Web App-кнопкой
-  await bot.sendMessage(
-    chatId,
-    'Добро пожаловать! Нажмите кнопку ниже, чтобы открыть Web App:',
-    inlineKeyboard
-  );
+bot.onText(/\/start/, (msg) => {
+    const chatId = msg.chat.id;
+    bot.sendMessage(chatId, "Добро пожаловать в наш Магазин Приложений! Нажмите ниже, чтобы открыть.", {
+        reply_markup: {
+            inline_keyboard: [{ text: 'Открыть Магазин', web_app: { url: webAppUrl } }]
+        }
+    });
 });
 
-console.log('Бот запущен и слушает /start...');
+bot.onText(/\/store/, (msg) => {
+    const chatId = msg.chat.id;
+    bot.sendMessage(chatId, "Открыть наш Магазин Приложений:", {
+        reply_markup: {
+            keyboard: [{ text: '🛍️ Открыть Магазин', web_app: { url: webAppUrl } }],
+            resize_keyboard: true,
+            one_time_keyboard: false // Оставить клавиатуру открытой
+        }
+    });
+});
+
+// Обработка данных, отправленных из Web App
+bot.on('message', async (msg) => {
+    if (msg.web_app_data) {
+        console.log('Получены данные из Web App:', msg.web_app_data.data);
+        try {
+            const data = JSON.parse(msg.web_app_data.data);
+            // Обработайте данные здесь, например, если TMA отправляет запрос на уведомление
+            bot.sendMessage(msg.chat.id, `Получено из TMA: ${data.message}`);
+        } catch (e) {
+            console.error('Ошибка парсинга данных Web App:', e);
+            bot.sendMessage(msg.chat.id, "Получены данные из TMA, но не удалось их разобрать.");
+        }
+    }
+});
+
+console.log(`Бот запущен... URL TMA: ${webAppUrl}`);

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>TMA App Store</title>
+    <link rel="stylesheet" href="styles/main.css">
+    <meta http-equiv="Cache-Control" content="no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+</head>
+<body>
+    <div id="app-root">
+        <div id="main-view" class="view active">
+            <header>
+                <h1>Каталог Приложений</h1>
+                <div class="search-container">
+                    <input type="text" id="search-input" placeholder="Найти приложение...">
+                    <button id="search-button">🔍</button>
+                </div>
+            </header>
+
+            <main id="content-area">
+                <section id="recent-section" class="content-section" style="display: none;">
+                    <h2>Недавно открытые</h2>
+                    <div id="recent-apps-list" class="horizontal-scroll-list">
+                        </div>
+                </section>
+
+                <div id="collections-container">
+                    </div>
+            </main>
+        </div>
+
+        <div id="detail-view" class="view">
+            <div class="view-header">
+                <button id="detail-back-btn" class="back-button">←</button>
+                <h2 id="detail-app-name-header">Детали приложения</h2>
+            </div>
+            <div id="app-detail-content" class="view-content">
+                </div>
+        </div>
+
+        <div id="list-view" class="view">
+            <div class="view-header">
+                <button id="list-back-btn" class="back-button">←</button>
+                <h2 id="list-view-title">Список</h2>
+            </div>
+            <div id="list-view-content" class="view-content apps-grid-vertical">
+                </div>
+        </div>
+        
+        <div id="admin-view" class="view">
+             <div class="view-header">
+                <button id="admin-back-btn" class="back-button">←</button>
+                <h2>Админ-панель</h2>
+            </div>
+            <div id="admin-content" class="view-content">
+                <h3>Добавить/Редактировать приложение</h3>
+                <form id="admin-app-form">
+                    <input type="hidden" id="admin-app-id">
+                    <input type="text" id="admin-app-name" placeholder="Название приложения" required>
+                    <textarea id="admin-app-description" placeholder="Описание"></textarea>
+                    <input type="text" id="admin-app-iconUrl" placeholder="URL иконки">
+                    <input type="text" id="admin-app-openLink" placeholder="Ссылка для запуска">
+                    <input type="text" id="admin-app-screenshots" placeholder="URL скриншотов (через запятую)">
+                    <select id="admin-app-categories" multiple></select>
+                    <label><input type="checkbox" id="admin-app-isEditorsChoice"> Выбор редакции</label>
+                    <button type="submit">Сохранить приложение</button>
+                </form>
+                </div>
+        </div>
+
+        <nav id="bottom-navigation">
+            <button data-view="main-view" class="nav-btn active">🏠<br><span>Главная</span></button>
+            <button data-view="list-view" data-type="categories" class="nav-btn">🗂️<br><span>Категории</span></button>
+            </nav>
+    </div>
+
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://unpkg.com/@tonconnect/sdk@latest/dist/tonconnect-sdk.min.js"></script> 
+    <script src="scripts/api.js"></script>
+    <script src="scripts/tonconnect.js"></script>
+    <script src="scripts/auth.js"></script>
+    <script src="scripts/favorites.js"></script>
+    <script src="scripts/main.js"></script>
+</body>
+</html>

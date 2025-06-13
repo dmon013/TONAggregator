@@ -1,19 +1,35 @@
-import firebase_admin
-from firebase_admin import credentials, firestore, auth as firebase_auth
-from flask import Flask
-from backend.extensions import db, cors
-from backend.routes.applications import applications_bp
-from backend.routes.favorites import favorites_bp
+# backend/app.py
+from flask import Flask, jsonify
+from flask_cors import CORS
 
-def create_app():
+from.config import Config
+from.extensions import firebase_db, initialize_firebase # firebase_db импортируется, но используется после инициализации
+from.utils.auth import validate_telegram_data # Предполагается, что вы создадите это
+
+# Импорт Blueprints
+from.routes.apps import apps_bp
+from.routes.categories import categories_bp
+from.routes.reviews import reviews_bp
+from.routes.users import users_bp
+
+def create_app(config_class=Config):
     app = Flask(__name__)
-    app.config.from_pyfile('config.py')
-    #db.init_app(app)
-    cors.init_app(app)
-    app.register_blueprint(applications_bp, url_prefix='/applications')
-    app.register_blueprint(favorites_bp, url_prefix='/favorites')
-    # Если будут еще модули, подключай так же
+    app.config.from_object(config_class)
 
-if __name__ == '__main__':
-    app = create_app()
-    app.run(debug=True, host='0.0.0.0', port=5001)
+    # Инициализация Firebase Admin SDK
+    initialize_firebase(app.config.get("FIREBASE_SERVICE_ACCOUNT_KEY_PATH"))
+
+    # Включение CORS для локальной разработки (ограничить в продакшене)
+    CORS(app, resources={r"/api/*": {"origins": "*"}}) # Будьте более конкретны в продакшене
+
+    # Регистрация Blueprints
+    app.register_blueprint(apps_bp, url_prefix='/api/apps')
+    app.register_blueprint(categories_bp, url_prefix='/api/categories')
+    app.register_blueprint(reviews_bp, url_prefix='/api/reviews')
+    app.register_blueprint(users_bp, url_prefix='/api/users')
+
+    @app.route('/api/health', methods=['GET'])
+    def health_check():
+        return jsonify({"status": "healthy", "message": "Backend работает!"}), 200
+
+    return app
